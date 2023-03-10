@@ -1,0 +1,67 @@
+* {
+  margin: 0;
+  padding: 0;
+  color: white;
+  font-family:Arial, Helvetica, sans-serif;
+}
+
+body {
+  background-color: #222222;
+}
+
+.horizontal {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+}
+.vertical {
+  display: flex;
+  flex-direction: column;
+}
+
+#boardContainer {
+  display: flex;
+  flex-direction: row;
+}
+
+#leftContainer, #rightContainer {
+  margin-top: 20px;
+}
+
+#rightContainer {
+  margin-left: 100px;
+}
+
+h1 {
+  margin: 20px auto;
+}
+
+.checkbox {
+  font-size: 25px;
+  margin: 20px auto;
+}
+input[type="checkbox"] {
+  transform: scale(1.7);
+  margin-right: 10px;
+}
+
+.imageButton {
+  border: solid 2px #666666;
+  filter: brightness(70%);
+}
+.imageButton:hover {
+  border: solid 2px red;
+  filter: brightness(100%);
+}
+
+.cellButton {
+  border: solid 2px #666666;
+}
+.cellButton:hover {
+  border: solid yellow 2px;
+  filter: brightness(150%);
+}
+
+.selected{
+  border: solid 2px red;
+}
