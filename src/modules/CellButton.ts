@@ -1,16 +1,16 @@
 export default class CellButton {
     canvas: HTMLCanvasElement;
     private _active: boolean;
-    parentClick: (self: CellButton) => void;
+    clickHandler: (button: CellButton) => void;
   
-    constructor(parent: HTMLElement, width: number, parentClick: (self: CellButton) => void) {
+    constructor(parent: HTMLElement, width: number, clickHandler: (button: CellButton) => void) {
       this.draw = this.draw.bind(this);
       this.handleClick = this.handleClick.bind(this);
 
       this.canvas = document.createElement("canvas");
       this._active = false;
       this.active = false;
-      this.parentClick = parentClick;
+      this.clickHandler = clickHandler;
   
       this.canvas.width = this.canvas.height = width;
       this.canvas.classList.add("cellButton"); 
@@ -19,11 +19,11 @@ export default class CellButton {
       ctx?.rect(1, 1, 24, 24);
       parent.append(this.canvas);
   
-      this.canvas.addEventListener("click", () => this.parentClick(this));
+      this.canvas.addEventListener("click", () => this.clickHandler(this));
     }
 
     handleClick(event: Event) {
-      this.parentClick(this);
+      this.clickHandler(this);
       this.canvas.classList.add("selected");
     }
 

@@ -17,8 +17,8 @@ export default class BoardController {
     readonly imageButtons: ImageButton[][];
     readonly cells: CellButton[][];
     
-    addingActive: Boolean;
-    activeDisplayBlocks: CellButton[];
+    private allowAddingCells: Boolean;
+    activeCells: CellButton[];
 
     constructor(
         imageId: string,
@@ -32,11 +32,11 @@ export default class BoardController {
         rowsOnMap: number
       ) {
         // binding methods
-        this.activateAdding = this.activateAdding.bind(this);
-        this.deactivateAdding = this.deactivateAdding.bind(this);
-        this.clearTab = this.clearTab.bind(this);
+        this.handleKeyDownEvents = this.handleKeyDownEvents.bind(this);
+        this.handleKeyUpEvents = this.handleKeyUpEvents.bind(this);
+        this.deactiveAllCells = this.deactiveAllCells.bind(this);
         this.handleCellClick = this.handleCellClick.bind(this);
-        this.handleButtonClick = this.handleButtonClick.bind(this);
+        this.handleImageButtonClick = this.handleImageButtonClick.bind(this);
 
         // assigning values from config.ts
         this.image = document.getElementById(imageId) as HTMLImageElement;
@@ -54,18 +54,17 @@ export default class BoardController {
         // generating board
         this.imageButtons = this.generateImageButtons();
         this.cells = this.generateMap();
-        this.addingActive = false;
-        this.activeDisplayBlocks = [];
+        this.allowAddingCells = false;
+        this.activeCells = [];
     
         // adding methods that handle chosen keyboard events
         const body = document.querySelector("body");
-        body?.addEventListener("keydown", this.activateAdding);
-        body?.addEventListener("keyup", this.deactivateAdding);
+        body?.addEventListener("keydown", this.handleKeyDownEvents);
+        body?.addEventListener("keyup", this.handleKeyUpEvents);
     }
 
     generateImageButtons(): ImageButton[][] {
         const buttons: ImageButton[][] = [];
-        const container: HTMLDivElement = this.imageContainer;
 
         const border = this.spriteStartingBorderWidth;
         const iterationWidth = this.cellRepeatWidth + border;
@@ -75,7 +74,7 @@ export default class BoardController {
             const row: ImageButton[] = [];
             const div = document.createElement("div");
             div.style.height = this.rowHeight + "px";
-            container.append(div);
+            this.imageContainer.append(div);
             for (let j = border; j < this.image.width / 2; j += this.cellRepeatWidth + border) {
                 const canvas = document.createElement("canvas");
                 canvas.width = canvas.height = this.buttonSize;
@@ -93,7 +92,7 @@ export default class BoardController {
                         this.buttonSize
                     );
                 }
-                row.push(new ImageButton(canvas, this.handleButtonClick));
+                row.push(new ImageButton(canvas, this.handleImageButtonClick));
                 div.append(canvas);
             }
             buttons.push(row);
@@ -103,7 +102,7 @@ export default class BoardController {
             const row: ImageButton[] = [];
             const div = document.createElement("div");
             div.style.height = this.rowHeight + "px";
-            container.append(div);
+            this.imageContainer.append(div);
             for (let j = border + this.image.width / 2; j < this.image.width; j += iterationWidth) {
                 const canvas = document.createElement("canvas");
                 canvas.width = canvas.height = this.buttonSize;
@@ -121,7 +120,7 @@ export default class BoardController {
                         this.buttonSize
                     );
                 }
-                row.push(new ImageButton(canvas, this.handleButtonClick));
+                row.push(new ImageButton(canvas, this.handleImageButtonClick));
                 div.append(canvas);
             }
             buttons.push(row);
@@ -131,7 +130,6 @@ export default class BoardController {
     
     generateMap(): CellButton[][] {
         const blocks: CellButton[][] = [];
-        const parent = this.map;
     
         for (let i = 0; i < this.rowsOnMap; i++) {
             const element = document.createElement("div");  
@@ -146,44 +144,44 @@ export default class BoardController {
                 row.push(block);
             }
             blocks.push(row);
-            parent.append(element);
+            this.map.append(element);
         }
         return blocks;
     }
     
-    activateAdding(ev: KeyboardEvent) {
-        if (ev.key == "Control") {
-            this.addingActive = true;
-            console.log(this.addingActive);
-        }
-    }
-    deactivateAdding(ev: KeyboardEvent) {
-        if (ev.key == "Control") {
-            this.addingActive = false;
-            console.log(this.addingActive);
+    handleCellClick(cell: CellButton) {
+        if (!this.allowAddingCells) {
+            this.deactiveAllCells();
+        } 
+        if (!this.activeCells.includes(cell)) {
+            this.activeCells.push(cell);
+            cell.active = true;
         }
     }
     
-    handleCellClick(trigger: CellButton) {
-        if (!this.addingActive) this.clearTab();
-        if (!this.activeDisplayBlocks.includes(trigger)) {
-            this.activeDisplayBlocks.push(trigger);
-            trigger.active = true;
-        }
-    }
-    
-    clearTab() {
-        this.activeDisplayBlocks.forEach((element) => {
+    deactiveAllCells() {
+        this.activeCells.forEach((element) => {
             element.active = false;
         });
-        this.activeDisplayBlocks.length = 0;
+        this.activeCells.length = 0;
     }
     
-    handleButtonClick(button: ImageButton) {
-        this.activeDisplayBlocks.forEach((element) => {
+    handleImageButtonClick(button: ImageButton) {
+        this.activeCells.forEach((element) => {
             element.draw(button.canvas);
             element.active = false;
         });
-        this.activeDisplayBlocks.length = 0;
+        this.activeCells.length = 0;
     }  
+
+    handleKeyDownEvents(event: KeyboardEvent) {
+        if (event.key == "Control") {
+            this.allowAddingCells = true;
+        }
+    }
+    handleKeyUpEvents(event: KeyboardEvent) {
+        if (event.key == "Control") {
+            this.allowAddingCells = false;
+        }
+    }
 }

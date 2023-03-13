@@ -6,8 +6,4 @@ export default class ImageButton {
         canvas.classList.add("imageButton");
         this.canvas.addEventListener("click", () => clickHandler(this));
     }
-  
-    insertIntoPage(parent: HTMLElement) {
-        parent.append(this.canvas);
-    } 
 }
