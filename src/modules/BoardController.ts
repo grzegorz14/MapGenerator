@@ -1,5 +1,6 @@
 import CellButton from "./CellButton";
 import ImageButton from "./ImageButton";
+import type IButton from "./interfaces/IButton";
 
 export default class BoardController {
     image: HTMLImageElement;
@@ -18,7 +19,7 @@ export default class BoardController {
     readonly cells: CellButton[][];
     
     private allowAddingCells: Boolean;
-    activeCells: CellButton[];
+    activeCells: IButton[];
 
     constructor(
         imageId: string,
@@ -139,6 +140,8 @@ export default class BoardController {
                 const block = new CellButton(
                     element,
                     this.buttonSize,
+                    i,
+                    j,
                     this.handleCellClick
                 );
                 row.push(block);
@@ -149,7 +152,7 @@ export default class BoardController {
         return blocks;
     }
     
-    handleCellClick(cell: CellButton) {
+    handleCellClick(cell: IButton) {
         if (!this.allowAddingCells) {
             this.deactiveAllCells();
         } 
@@ -167,9 +170,9 @@ export default class BoardController {
     }
     
     handleImageButtonClick(button: ImageButton) {
-        this.activeCells.forEach((element) => {
-            element.draw(button.canvas);
-            element.active = false;
+        this.activeCells.forEach((cell) => {
+            cell.draw(button.canvas);
+            cell.active = false;
         });
         this.activeCells.length = 0;
     }  

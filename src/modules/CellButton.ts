@@ -1,15 +1,21 @@
-export default class CellButton {
+import type IButton from "./interfaces/IButton";
+import type IClickHandler from "./interfaces/IClickHandler";
+import type IMapButton from "./interfaces/IMapButton";
+
+export default class CellButton implements IMapButton {
     canvas: HTMLCanvasElement;
     private _active: boolean;
-    clickHandler: (button: CellButton) => void;
+    x: number;
+    y: number;
+    clickHandler: IClickHandler;
   
-    constructor(parent: HTMLElement, width: number, clickHandler: (button: CellButton) => void) {
+    constructor(parent: HTMLElement, width: number, x: number, y: number, clickHandler: IClickHandler) {
       this.draw = this.draw.bind(this);
-      this.handleClick = this.handleClick.bind(this);
 
       this.canvas = document.createElement("canvas");
       this._active = false;
-      this.active = false;
+      this.x = x;
+      this.y = y;
       this.clickHandler = clickHandler;
   
       this.canvas.width = this.canvas.height = width;
@@ -20,11 +26,6 @@ export default class CellButton {
       parent.append(this.canvas);
   
       this.canvas.addEventListener("click", () => this.clickHandler(this));
-    }
-
-    handleClick(event: Event) {
-      this.clickHandler(this);
-      this.canvas.classList.add("selected");
     }
 
     draw(imagePart: HTMLCanvasElement) {
