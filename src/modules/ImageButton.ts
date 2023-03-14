@@ -3,7 +3,7 @@ import type IClickHandler from "./interfaces/IClickHandler";
 
 export default class ImageButton implements IButton {
     readonly canvas: HTMLCanvasElement;
-    clickHandler: (button: IButton) => void;
+    clickHandler: IClickHandler;
 
     constructor(canvas: HTMLCanvasElement, clickHandler: IClickHandler) {
         this.canvas = canvas;

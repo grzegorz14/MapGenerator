@@ -1,11 +1,13 @@
 import CellButton from "./CellButton";
 import ImageButton from "./ImageButton";
 import type IButton from "./interfaces/IButton";
+import type IMapButton from "./interfaces/IMapButton";
 
 export default class BoardController {
     image: HTMLImageElement;
     imageContainer: HTMLDivElement;
     map: HTMLDivElement;
+    autoCheckbox: HTMLInputElement;
 
     cellRepeatWidth: number;
     spriteStartingBorderWidth: number;
@@ -19,12 +21,13 @@ export default class BoardController {
     readonly cells: CellButton[][];
     
     private allowAddingCells: Boolean;
-    activeCells: IButton[];
+    activeCells: IMapButton[];
 
     constructor(
         imageId: string,
         imageContainerId: string,
         mapId: string,
+        autoCheckboxId: string,
         cellRepeatWidth: number,
         spriteStartingBorderWidth: number,
         buttonSize: number,
@@ -38,11 +41,14 @@ export default class BoardController {
         this.deactiveAllCells = this.deactiveAllCells.bind(this);
         this.handleCellClick = this.handleCellClick.bind(this);
         this.handleImageButtonClick = this.handleImageButtonClick.bind(this);
+        this.drawOnActiveCells = this.drawOnActiveCells.bind(this);
+        this.activateNextCell = this.activateNextCell.bind(this);
 
         // assigning values from config.ts
         this.image = document.getElementById(imageId) as HTMLImageElement;
         this.imageContainer = document.getElementById(imageContainerId) as HTMLDivElement;
         this.map = document.getElementById(mapId) as HTMLDivElement;
+        this.autoCheckbox = document.getElementById(autoCheckboxId) as HTMLInputElement;
 
         this.cellRepeatWidth = cellRepeatWidth;
         this.spriteStartingBorderWidth = spriteStartingBorderWidth;
@@ -132,16 +138,16 @@ export default class BoardController {
     generateMap(): CellButton[][] {
         const blocks: CellButton[][] = [];
     
-        for (let i = 0; i < this.rowsOnMap; i++) {
+        for (let x = 0; x < this.rowsOnMap; x++) { // x - row
             const element = document.createElement("div");  
             element.style.height = this.rowHeight + "px";
             const row: CellButton[] = [];
-            for (let j = 0; j < this.columnsOnMap; j++) {
+            for (let y = 0; y < this.columnsOnMap; y++) { // y - column
                 const block = new CellButton(
                     element,
                     this.buttonSize,
-                    i,
-                    j,
+                    x,
+                    y,
                     this.handleCellClick
                 );
                 row.push(block);
@@ -152,7 +158,8 @@ export default class BoardController {
         return blocks;
     }
     
-    handleCellClick(cell: IButton) {
+    // select cell
+    handleCellClick(cell: IMapButton) {
         if (!this.allowAddingCells) {
             this.deactiveAllCells();
         } 
@@ -162,29 +169,61 @@ export default class BoardController {
         }
     }
     
-    deactiveAllCells() {
-        this.activeCells.forEach((element) => {
-            element.active = false;
-        });
-        this.activeCells.length = 0;
-    }
-    
-    handleImageButtonClick(button: ImageButton) {
-        this.activeCells.forEach((cell) => {
-            cell.draw(button.canvas);
-            cell.active = false;
-        });
-        this.activeCells.length = 0;
+    // draw clicked image on selected cells
+    handleImageButtonClick(button: IButton) {
+        this.drawOnActiveCells(button.canvas);
+        if (this.activeCells.length > 0 && this.autoCheckbox.checked) {
+            this.activateNextCell();
+        }
+        else {
+            this.activeCells.length = 0;
+        }
     }  
 
+    drawOnActiveCells(canvas: HTMLCanvasElement) {
+        this.activeCells.forEach(cell => {
+            cell.draw(canvas);
+            cell.active = false;
+        });
+    }
+
+    activateNextCell() {
+        let x = this.activeCells[this.activeCells.length - 1].x 
+        let y = this.activeCells[this.activeCells.length - 1].y + 1
+        if (y >= this.columnsOnMap) {
+            x++;
+            y = 0;
+        }
+        if (x >= this.rowsOnMap) {
+            x = 0;
+            y = 0;
+        }
+        this.activeCells.length = 0;
+
+        this.cells[x][y].active = true;
+        this.activeCells.push(this.cells[x][y]);
+    }
+
     handleKeyDownEvents(event: KeyboardEvent) {
-        if (event.key == "Control") {
-            this.allowAddingCells = true;
+        switch (event.key) {
+            case "Control":
+                this.allowAddingCells = true;
+                break;
+            case "Delete":
+                this.deactiveAllCells();
+                break;
         }
     }
     handleKeyUpEvents(event: KeyboardEvent) {
         if (event.key == "Control") {
             this.allowAddingCells = false;
         }
+    }
+
+    deactiveAllCells() {
+        this.activeCells.forEach((element) => {
+            element.active = false;
+        });
+        this.activeCells.length = 0;
     }
 }

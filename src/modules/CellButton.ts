@@ -1,5 +1,3 @@
-import type IButton from "./interfaces/IButton";
-import type IClickHandler from "./interfaces/IClickHandler";
 import type IMapButton from "./interfaces/IMapButton";
 
 export default class CellButton implements IMapButton {
@@ -7,9 +5,9 @@ export default class CellButton implements IMapButton {
     private _active: boolean;
     x: number;
     y: number;
-    clickHandler: IClickHandler;
+    clickHandler: (button: IMapButton) => void;
   
-    constructor(parent: HTMLElement, width: number, x: number, y: number, clickHandler: IClickHandler) {
+    constructor(parent: HTMLElement, width: number, x: number, y: number, clickHandler: (button: IMapButton) => void) {
       this.draw = this.draw.bind(this);
 
       this.canvas = document.createElement("canvas");

@@ -5,6 +5,7 @@ let boardController = new BoardController(
   config.imageId,
   config.imageContainerId,
   config.mapContainerId,
+  config.autoCheckboxId,
   config.cellRepeatWidth,
   config.spriteStartingBorderWidth,
   config.buttonSize,

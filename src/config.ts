@@ -2,6 +2,7 @@ export const config = {
   imageId: "image",
   imageContainerId: "imageContainer",
   mapContainerId: "map",
+  autoCheckboxId: "autoCheckbox",
   cellRepeatWidth: 47,
   spriteStartingBorderWidth: 1,
   buttonSize: 30,
