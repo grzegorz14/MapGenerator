@@ -9,12 +9,14 @@ export default class SelectionDivController {
         this.show = this.show.bind(this);
         this.move = this.move.bind(this);
         this.setSize = this.setSize.bind(this);
+        this.getOffsetX = this.getOffsetX.bind(this);
+        this.getOffsetY = this.getOffsetY.bind(this);
 
         this.div = div;
-        this.initialX = x;
-        this.initialY = y;
-        this.currentX = x;
-        this.currentY = y;
+        this.initialX = this.getOffsetX(x);
+        this.initialY = this.getOffsetY(y);
+        this.currentX = this.getOffsetX(x);
+        this.currentY = this.getOffsetY(y);
 
         // assign default styles
         this.div.style.display = "none";
@@ -27,8 +29,8 @@ export default class SelectionDivController {
     }
 
     move(x: number, y: number) {
-        this.currentX = x;
-        this.currentY = y;
+        this.currentX = this.getOffsetX(x);
+        this.currentY = this.getOffsetY(y);
         this.setSize();
     }
 
@@ -41,7 +43,16 @@ export default class SelectionDivController {
 
         this.div.style.left = x + "px";
         this.div.style.top = y + "px";
-        this.div.style.width = width + "px";
-        this.div.style.height = height + "px";
+        this.div.style.width = (width - 1) + "px";
+        this.div.style.height = (height - 1) + "px";
+    }
+
+    private getOffsetX(x: number) {
+        let bodyRect = document.body.getBoundingClientRect();
+        return x - bodyRect.left;
+    }
+    private getOffsetY(y: number) {
+        let bodyRect = document.body.getBoundingClientRect();
+        return y - bodyRect.top;
     }
 }

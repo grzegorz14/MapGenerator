@@ -13,4 +13,4 @@ let boardController = new BoardController(
   config.buttonBorderSize,
   config.columnsOnMap,
   config.rowsOnMap
-);
+)

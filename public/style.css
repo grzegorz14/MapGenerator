@@ -43,13 +43,13 @@ body {
 #selection {
   position: absolute;
   background-color: yellow;
-  opacity: 0.5;
+  opacity: 0.4;
   width: 100px;
   height: 100px;
   z-index: 10;
-  border: 2px solid yellow;
   left: 500px;
   top: 100px;
+  margin: 1px;
 }
 
 h1 {
@@ -79,9 +79,12 @@ input[type="checkbox"] {
 }
 .cellButton:hover {
   border: solid yellow 2px;
-  filter: brightness(150%);
 }
 
+.startSelection {
+  border: solid yellow 2px;
+}
 .selected{
   border: solid 2px red;
 }
+

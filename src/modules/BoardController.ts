@@ -24,8 +24,12 @@ export default class BoardController {
     readonly imageButtons: ImageButton[][];
     readonly cells: CellButton[][];
     
-    private allowAddingCells: Boolean;
-    activeCells: IMapButton[];
+    private selectionActive: Boolean = false;
+    selectedX: number = -1;
+    selectedY: number = -1;
+
+    private allowAddingCells: Boolean = false;
+    activeCells: IMapButton[] = [];
 
     constructor(
         imageId: string,
@@ -44,7 +48,8 @@ export default class BoardController {
         this.handleKeyDownEvents = this.handleKeyDownEvents.bind(this);
         this.handleKeyUpEvents = this.handleKeyUpEvents.bind(this);
         this.deactiveAllCells = this.deactiveAllCells.bind(this);
-        this.handleCellClick = this.handleCellClick.bind(this);
+        this.handleCellClickDown = this.handleCellClickDown.bind(this);
+        this.handleCellClickUp = this.handleCellClickUp.bind(this);
         this.handleImageButtonClick = this.handleImageButtonClick.bind(this);
         this.drawOnActiveCells = this.drawOnActiveCells.bind(this);
         this.activateNextCell = this.activateNextCell.bind(this);
@@ -70,8 +75,6 @@ export default class BoardController {
         // generating board
         this.imageButtons = this.generateImageButtons();
         this.cells = this.generateMap();
-        this.allowAddingCells = false;
-        this.activeCells = [];
     
         // adding methods that handle chosen keyboard events and mouse events
         const body = document.querySelector("body");
@@ -160,7 +163,8 @@ export default class BoardController {
                     this.buttonSize,
                     x,
                     y,
-                    this.handleCellClick
+                    this.handleCellClickDown,
+                    this.handleCellClickUp
                 );
                 row.push(block);
             }
@@ -170,14 +174,29 @@ export default class BoardController {
         return blocks;
     }
     
-    // select cell
-    handleCellClick(cell: IMapButton) {
+    handleCellClickDown(cell: IMapButton) {  // select first cell of selection
         if (!this.allowAddingCells) {
             this.deactiveAllCells();
         } 
-        if (!this.activeCells.includes(cell)) {
-            this.activeCells.push(cell);
-            cell.active = true;
+        this.selectedX = cell.x;
+        this.selectedY = cell.y;
+        cell.canvas.classList.add("startSelection");
+    }
+    handleCellClickUp(cell: IMapButton) {  // acitivate cells in whole selection
+        let startingX = this.selectedX < cell.x ? this.selectedX : cell.x;
+        let startingY = this.selectedY < cell.y ? this.selectedY : cell.y;
+        let endingX = this.selectedX >= cell.x ? this.selectedX : cell.x;
+        let endingY = this.selectedY >= cell.y ? this.selectedY : cell.y;
+
+        for (let row = startingX; row <= endingX; row++) {
+            for (let col = startingY; col <= endingY; col++) {
+                let cell = this.cells[row][col];
+                if (!this.activeCells.includes(cell)) {
+                    cell.active = true;
+                    this.activeCells.push(cell);
+                    cell.canvas.classList.remove("startSelection");
+                }
+            }
         }
     }
     
@@ -219,9 +238,13 @@ export default class BoardController {
     handleKeyDownEvents(event: KeyboardEvent) {
         switch (event.key) {
             case "Control":
+            case "Meta":
                 this.allowAddingCells = true;
                 break;
             case "Delete":
+                this.activeCells.forEach(cell => {
+                    cell.clearCanvas();
+                });
                 this.deactiveAllCells();
                 break;
         }
@@ -233,8 +256,8 @@ export default class BoardController {
     }
 
     deactiveAllCells() {
-        this.activeCells.forEach((element) => {
-            element.active = false;
+        this.activeCells.forEach(cell => {
+            cell.active = false;
         });
         this.activeCells.length = 0;
     }
@@ -252,12 +275,11 @@ export default class BoardController {
 
             this.selectionDivController = new SelectionDivController(this.selectionDiv ,x, y);
             this.selectionDivController.show(true);
+            this.selectionActive = true;
         }
     }
-    //var bodyRect = document.body.getBoundingClientRect(),
-    // elemRect = element.getBoundingClientRect(),
-    // offset   = elemRect.top - bodyRect.top;
     handleMouseMove(event: MouseEvent) {
+        if (!this.selectionActive) return;
         let x = event.clientX;
         let y = event.clientY;
         let rect = this.map.getBoundingClientRect();
@@ -267,5 +289,6 @@ export default class BoardController {
     }
     handleMouseUp(event: MouseEvent) {
         this.selectionDivController?.show(false);
+        this.selectionActive = false;
     }
 }
