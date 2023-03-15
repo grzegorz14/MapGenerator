@@ -2,11 +2,15 @@ import CellButton from "./CellButton";
 import ImageButton from "./ImageButton";
 import type IButton from "./interfaces/IButton";
 import type IMapButton from "./interfaces/IMapButton";
+import SelectionDivInfo from "./SelectionDivController";
+import SelectionDivController from "./SelectionDivController";
 
 export default class BoardController {
     image: HTMLImageElement;
     imageContainer: HTMLDivElement;
     map: HTMLDivElement;
+    selectionDiv: HTMLDivElement;
+    selectionDivController?: SelectionDivController;
     autoCheckbox: HTMLInputElement;
 
     cellRepeatWidth: number;
@@ -27,6 +31,7 @@ export default class BoardController {
         imageId: string,
         imageContainerId: string,
         mapId: string,
+        selectionDivId: string,
         autoCheckboxId: string,
         cellRepeatWidth: number,
         spriteStartingBorderWidth: number,
@@ -43,11 +48,15 @@ export default class BoardController {
         this.handleImageButtonClick = this.handleImageButtonClick.bind(this);
         this.drawOnActiveCells = this.drawOnActiveCells.bind(this);
         this.activateNextCell = this.activateNextCell.bind(this);
+        this.handleMouseDown = this.handleMouseDown.bind(this);
+        this.handleMouseMove = this.handleMouseMove.bind(this);
+        this.handleMouseUp = this.handleMouseUp.bind(this);
 
         // assigning values from config.ts
         this.image = document.getElementById(imageId) as HTMLImageElement;
         this.imageContainer = document.getElementById(imageContainerId) as HTMLDivElement;
         this.map = document.getElementById(mapId) as HTMLDivElement;
+        this.selectionDiv = document.getElementById(selectionDivId) as HTMLDivElement;
         this.autoCheckbox = document.getElementById(autoCheckboxId) as HTMLInputElement;
 
         this.cellRepeatWidth = cellRepeatWidth;
@@ -64,10 +73,13 @@ export default class BoardController {
         this.allowAddingCells = false;
         this.activeCells = [];
     
-        // adding methods that handle chosen keyboard events
+        // adding methods that handle chosen keyboard events and mouse events
         const body = document.querySelector("body");
         body?.addEventListener("keydown", this.handleKeyDownEvents);
         body?.addEventListener("keyup", this.handleKeyUpEvents);
+        body?.addEventListener("mousedown", this.handleMouseDown);
+        body?.addEventListener("mousemove", this.handleMouseMove);
+        body?.addEventListener("mouseup", this.handleMouseUp);
     }
 
     generateImageButtons(): ImageButton[][] {
@@ -225,5 +237,35 @@ export default class BoardController {
             element.active = false;
         });
         this.activeCells.length = 0;
+    }
+
+    handleMouseDown(event: MouseEvent) {
+        let x = event.clientX;
+        let y = event.clientY;
+
+        // check if click is inside map
+        let rect = this.map.getBoundingClientRect();
+        if (x > rect.left && x < rect.right && y > rect.top && y < rect.bottom) {
+            this.selectionDiv.style.display = "block";
+            this.selectionDiv.style.left = x + "px";
+            this.selectionDiv.style.top = y + "px";
+
+            this.selectionDivController = new SelectionDivController(this.selectionDiv ,x, y);
+            this.selectionDivController.show(true);
+        }
+    }
+    //var bodyRect = document.body.getBoundingClientRect(),
+    // elemRect = element.getBoundingClientRect(),
+    // offset   = elemRect.top - bodyRect.top;
+    handleMouseMove(event: MouseEvent) {
+        let x = event.clientX;
+        let y = event.clientY;
+        let rect = this.map.getBoundingClientRect();
+        if (x > rect.left && x < rect.right && y > rect.top && y < rect.bottom) {
+            this.selectionDivController?.move(x, y);
+        }
+    }
+    handleMouseUp(event: MouseEvent) {
+        this.selectionDivController?.show(false);
     }
 }
