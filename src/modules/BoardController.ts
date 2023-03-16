@@ -1,8 +1,8 @@
+import ActionHistory from "./ActionHistory";
 import CellButton from "./CellButton";
 import ImageButton from "./ImageButton";
 import type IButton from "./interfaces/IButton";
 import type IMapButton from "./interfaces/IMapButton";
-import SelectionDivInfo from "./SelectionDivController";
 import SelectionDivController from "./SelectionDivController";
 
 export default class BoardController {
@@ -12,6 +12,7 @@ export default class BoardController {
     selectionDiv: HTMLDivElement;
     selectionDivController?: SelectionDivController;
     autoCheckbox: HTMLInputElement;
+    contextMenu: HTMLDivElement;
 
     cellRepeatWidth: number;
     spriteStartingBorderWidth: number;
@@ -22,21 +23,18 @@ export default class BoardController {
     rowsOnMap: number;
 
     readonly imageButtons: ImageButton[][];
-    readonly cells: CellButton[][];
+    cells: CellButton[][];
     
     private selectionActive: Boolean = false;
     selectedX: number = -1;
     selectedY: number = -1;
 
     private allowAddingCells: Boolean = false;
-    activeCells: IMapButton[] = [];
+    activeCells: CellButton[] = [];
+
+    actionHistory: ActionHistory;
 
     constructor(
-        imageId: string,
-        imageContainerId: string,
-        mapId: string,
-        selectionDivId: string,
-        autoCheckboxId: string,
         cellRepeatWidth: number,
         spriteStartingBorderWidth: number,
         buttonSize: number,
@@ -45,6 +43,7 @@ export default class BoardController {
         rowsOnMap: number
       ) {
         // binding methods
+        this.addEvents = this.addEvents.bind(this);
         this.handleKeyDownEvents = this.handleKeyDownEvents.bind(this);
         this.handleKeyUpEvents = this.handleKeyUpEvents.bind(this);
         this.deactiveAllCells = this.deactiveAllCells.bind(this);
@@ -56,13 +55,26 @@ export default class BoardController {
         this.handleMouseDown = this.handleMouseDown.bind(this);
         this.handleMouseMove = this.handleMouseMove.bind(this);
         this.handleMouseUp = this.handleMouseUp.bind(this);
+        this.isInsideMap = this.isInsideMap.bind(this);
+        this.updateMap = this.updateMap.bind(this);
+
+        this.openContextMenu = this.openContextMenu.bind(this);
+        this.undo = this.undo.bind(this);
+        this.redo = this.redo.bind(this);
+        this.cut = this.cut.bind(this);
+        this.copy = this.copy.bind(this);
+        this.paste = this.paste.bind(this);
+        this.delete = this.delete.bind(this);
+        this.saveToFile = this.saveToFile.bind(this);
+        this.loadDataFromFile = this.loadDataFromFile.bind(this);
 
         // assigning values from config.ts
-        this.image = document.getElementById(imageId) as HTMLImageElement;
-        this.imageContainer = document.getElementById(imageContainerId) as HTMLDivElement;
-        this.map = document.getElementById(mapId) as HTMLDivElement;
-        this.selectionDiv = document.getElementById(selectionDivId) as HTMLDivElement;
-        this.autoCheckbox = document.getElementById(autoCheckboxId) as HTMLInputElement;
+        this.image = document.getElementById("image") as HTMLImageElement;
+        this.imageContainer = document.getElementById("imageContainer") as HTMLDivElement;
+        this.map = document.getElementById("map") as HTMLDivElement;
+        this.selectionDiv = document.getElementById("selection") as HTMLDivElement;
+        this.autoCheckbox = document.getElementById("autoCheckbox") as HTMLInputElement;
+        this.contextMenu = document.getElementById("contextMenu") as HTMLDivElement;
 
         this.cellRepeatWidth = cellRepeatWidth;
         this.spriteStartingBorderWidth = spriteStartingBorderWidth;
@@ -72,17 +84,30 @@ export default class BoardController {
         this.columnsOnMap = columnsOnMap;
         this.rowsOnMap = rowsOnMap;
 
-        // generating board
+        // preparing map and events
         this.imageButtons = this.generateImageButtons();
         this.cells = this.generateMap();
-    
-        // adding methods that handle chosen keyboard events and mouse events
+        this.actionHistory = new ActionHistory(this.cells);
+        this.addEvents();
+    }
+
+    addEvents() {
         const body = document.querySelector("body");
         body?.addEventListener("keydown", this.handleKeyDownEvents);
         body?.addEventListener("keyup", this.handleKeyUpEvents);
         body?.addEventListener("mousedown", this.handleMouseDown);
         body?.addEventListener("mousemove", this.handleMouseMove);
         body?.addEventListener("mouseup", this.handleMouseUp);
+        body?.addEventListener("contextmenu", this.openContextMenu);
+
+        document.getElementById("undoOption")?.addEventListener("click", this.undo);
+        document.getElementById("redoOption")?.addEventListener("click", this.redo);
+        document.getElementById("cutOption")?.addEventListener("click", this.cut);
+        document.getElementById("copyOption")?.addEventListener("click", this.copy);
+        document.getElementById("pasteOption")?.addEventListener("click", this.paste);
+        document.getElementById("deleteOption")?.addEventListener("click", this.deactiveAllCells);
+        document.getElementById("saveFileOption")?.addEventListener("click", this.saveToFile);
+        document.getElementById("loadFileOption")?.addEventListener("click", this.loadDataFromFile);
     }
 
     generateImageButtons(): ImageButton[][] {
@@ -173,16 +198,41 @@ export default class BoardController {
         }
         return blocks;
     }
+    updateMap(cells: CellButton[][]): CellButton[][] {
+        this.map.innerHTML = "";
+        const blocks: CellButton[][] = [];
     
-    handleCellClickDown(cell: IMapButton) {  // select first cell of selection
-        if (!this.allowAddingCells) {
-            this.deactiveAllCells();
-        } 
+        for (let x = 0; x < this.rowsOnMap; x++) { // x - row
+            const element = document.createElement("div");  
+            element.style.height = this.rowHeight + "px";
+            const row: CellButton[] = [];
+            for (let y = 0; y < this.columnsOnMap; y++) { // y - column
+                const block = new CellButton(
+                    element,
+                    this.buttonSize,
+                    x,
+                    y,
+                    this.handleCellClickDown,
+                    this.handleCellClickUp,
+                    cells[x][y].canvas
+                );
+                row.push(block);
+            }
+            blocks.push(row);
+            this.map.append(element);
+        }
+        return blocks;
+    }
+    
+    handleCellClickDown(cell: IMapButton, event: MouseEvent) {  // select first cell of selection
+        if (event.button == 2) return;
+        if (!this.allowAddingCells) this.deactiveAllCells()
         this.selectedX = cell.x;
         this.selectedY = cell.y;
         cell.canvas.classList.add("startSelection");
     }
-    handleCellClickUp(cell: IMapButton) {  // acitivate cells in whole selection
+    handleCellClickUp(cell: IMapButton, event: MouseEvent) {  // acitivate cells in whole selection
+        if (event.button == 2) return;
         let startingX = this.selectedX < cell.x ? this.selectedX : cell.x;
         let startingY = this.selectedY < cell.y ? this.selectedY : cell.y;
         let endingX = this.selectedX >= cell.x ? this.selectedX : cell.x;
@@ -203,12 +253,8 @@ export default class BoardController {
     // draw clicked image on selected cells
     handleImageButtonClick(button: IButton) {
         this.drawOnActiveCells(button.canvas);
-        if (this.activeCells.length > 0 && this.autoCheckbox.checked) {
-            this.activateNextCell();
-        }
-        else {
-            this.activeCells.length = 0;
-        }
+        if (this.activeCells.length > 0 && this.autoCheckbox.checked) this.activateNextCell()
+        else this.activeCells.length = 0;
     }  
 
     drawOnActiveCells(canvas: HTMLCanvasElement) {
@@ -216,6 +262,7 @@ export default class BoardController {
             cell.draw(canvas);
             cell.active = false;
         });
+        this.actionHistory.updateHistory(this.cells);
     }
 
     activateNextCell() {
@@ -263,12 +310,13 @@ export default class BoardController {
     }
 
     handleMouseDown(event: MouseEvent) {
+        if (event.button == 2) return;
+        if (this.contextMenu.classList.contains("visible")) return;
+
         let x = event.clientX;
         let y = event.clientY;
 
-        // check if click is inside map
-        let rect = this.map.getBoundingClientRect();
-        if (x > rect.left && x < rect.right && y > rect.top && y < rect.bottom) {
+        if (this.isInsideMap(event)) {
             this.selectionDiv.style.display = "block";
             this.selectionDiv.style.left = x + "px";
             this.selectionDiv.style.top = y + "px";
@@ -280,15 +328,61 @@ export default class BoardController {
     }
     handleMouseMove(event: MouseEvent) {
         if (!this.selectionActive) return;
-        let x = event.clientX;
-        let y = event.clientY;
-        let rect = this.map.getBoundingClientRect();
-        if (x > rect.left && x < rect.right && y > rect.top && y < rect.bottom) {
-            this.selectionDivController?.move(x, y);
+        if (this.contextMenu.classList.contains("visible")) return;
+        if (this.isInsideMap(event)) {
+            this.selectionDivController?.move(event.clientX, event.clientY);
         }
     }
     handleMouseUp(event: MouseEvent) {
+        if (event.button == 2) return;
+        if (this.contextMenu.classList.contains("visible")) {
+            if (event.target != this.contextMenu) {
+                this.contextMenu.classList.remove("visible");
+            }
+            return;
+        }
         this.selectionDivController?.show(false);
         this.selectionActive = false;
     }
+
+    private isInsideMap(event: MouseEvent) { // check if click is inside map
+        let rect = this.map.getBoundingClientRect();
+        return event.clientX > rect.left && event.clientX < rect.right && event.clientY > rect.top && event.clientY < rect.bottom;
+    }
+
+    openContextMenu(event: MouseEvent) {
+        event.preventDefault();
+        if (this.isInsideMap(event)) {
+            this.contextMenu.style.left = event.clientX + "px";
+            this.contextMenu.style.top = event.clientY + "px";
+            this.contextMenu.classList.add("visible");
+        }
+    }
+
+    // contextMenu options
+    undo() {
+        this.cells = this.updateMap(this.actionHistory.undo());
+    }
+    redo() {
+
+    }
+    cut() {
+
+    }
+    copy() {
+
+    }
+    paste() {
+
+    }
+    delete() {
+
+    }
+    saveToFile() {
+
+    }
+    loadDataFromFile() {
+
+    }
+
 }

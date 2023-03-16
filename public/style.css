@@ -88,3 +88,34 @@ input[type="checkbox"] {
   border: solid 2px red;
 }
 
+#contextMenu {
+  position: fixed;
+  z-index: 100;
+  background-color: whitesmoke;
+  border-radius: 5px;
+  transform: scale(0);
+  transform-origin: top left;
+  display: flex;
+  flex-direction: column;
+  padding: 5px;
+}
+#contextMenu.visible {
+  transform: scale(1);
+  transition: 200ms ease-in-out;
+}
+
+#contextMenu > div {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  border-radius: 3px;
+  transition: 200ms linear;
+}
+#contextMenu > div:hover {
+  background-color: #AAAAAA;
+}
+#contextMenu > div > div {
+  color: black;
+  font-size: 20px;
+  padding: 3px;
+}

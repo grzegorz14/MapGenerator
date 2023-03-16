@@ -6,14 +6,21 @@ export default class CellButton implements IMapButton {
     private _active: boolean;
     x: number;
     y: number;
-    clickDownHandler: (button: IMapButton) => void;
-    clickUpHandler: (button: IMapButton) => void;
+    clickDownHandler: (button: IMapButton, event: MouseEvent) => void;
+    clickUpHandler: (button: IMapButton, event: MouseEvent) => void;
   
-    constructor(parent: HTMLElement, width: number, x: number, y: number, clickDownHandler: (button: IMapButton) => void, clickUpHandler: (button: IMapButton) => void) {
+    constructor(
+      parent: HTMLElement,
+      width: number, 
+      x: number, 
+      y: number, 
+      clickDownHandler: (button: IMapButton, event: MouseEvent) => void, 
+      clickUpHandler: (button: IMapButton, event: MouseEvent) => void,
+      canvas?: HTMLCanvasElement,
+      ) {
       this.draw = this.draw.bind(this);
       this.clearCanvas = this.clearCanvas.bind(this);
 
-      this.canvas = document.createElement("canvas");
       this.width = width;
       this._active = false;
       this.x = x;
@@ -21,15 +28,22 @@ export default class CellButton implements IMapButton {
       this.clickDownHandler = clickDownHandler;
       this.clickUpHandler = clickUpHandler;
   
-      this.canvas.width = this.canvas.height = width;
-      this.canvas.classList.add("cellButton"); 
-      const ctx = this.canvas.getContext("2d");
-      ctx?.fillRect(0, 0, width, width);
-      ctx?.rect(1, 1, 24, 24);
+      if (canvas == null) {      
+        this.canvas = document.createElement("canvas");
+        this.canvas.width = this.canvas.height = width;
+        this.canvas.classList.add("cellButton"); 
+        const ctx = this.canvas.getContext("2d");
+        ctx?.fillRect(0, 0, width, width);
+        ctx?.rect(1, 1, 24, 24);
+      }
+      else {
+        this.canvas = canvas;
+      }
+
       parent.append(this.canvas);
   
-      this.canvas.addEventListener("mousedown", () => this.clickDownHandler(this));
-      this.canvas.addEventListener("mouseup", () => this.clickUpHandler(this));
+      this.canvas.addEventListener("mousedown", (event) => this.clickDownHandler(this, event));
+      this.canvas.addEventListener("mouseup", (event) => this.clickUpHandler(this, event));
     }
 
     draw(imagePart: HTMLCanvasElement) {
