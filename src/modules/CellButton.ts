@@ -28,16 +28,16 @@ export default class CellButton implements IMapButton {
       this.clickDownHandler = clickDownHandler;
       this.clickUpHandler = clickUpHandler;
   
-      if (canvas == null) {      
-        this.canvas = document.createElement("canvas");
+      this.canvas = document.createElement("canvas");
         this.canvas.width = this.canvas.height = width;
         this.canvas.classList.add("cellButton"); 
         const ctx = this.canvas.getContext("2d");
+      if (canvas == null) {      
         ctx?.fillRect(0, 0, width, width);
         ctx?.rect(1, 1, 24, 24);
       }
       else {
-        this.canvas = canvas;
+        ctx?.drawImage(canvas, 0, 0, width, width);
       }
 
       parent.append(this.canvas);

@@ -1,9 +1,10 @@
-import ActionHistory from "./ActionHistory";
+// import ActionHistory from "./ActionHistory";
 import CellButton from "./CellButton";
 import ImageButton from "./ImageButton";
 import type IButton from "./interfaces/IButton";
 import type IMapButton from "./interfaces/IMapButton";
 import SelectionDivController from "./SelectionDivController";
+import type BoardInfo from "./BoardInfo";
 
 export default class BoardController {
     image: HTMLImageElement;
@@ -14,36 +15,28 @@ export default class BoardController {
     autoCheckbox: HTMLInputElement;
     contextMenu: HTMLDivElement;
 
-    cellRepeatWidth: number;
-    spriteStartingBorderWidth: number;
-    buttonSize: number;
-    buttonBorderSize: number;
-    rowHeight: number;
-    columnsOnMap: number;
-    rowsOnMap: number;
+    info: BoardInfo;
 
     readonly imageButtons: ImageButton[][];
     cells: CellButton[][];
     
-    private selectionActive: Boolean = false;
+    selectionActive: Boolean = false;
     selectedX: number = -1;
     selectedY: number = -1;
 
     private allowAddingCells: Boolean = false;
     activeCells: CellButton[] = [];
 
-    actionHistory: ActionHistory;
+    cellsHistory: CellButton[][][] = [];
+    currentState: number = 0;
 
-    constructor(
-        cellRepeatWidth: number,
-        spriteStartingBorderWidth: number,
-        buttonSize: number,
-        buttonBorderSize: number,
-        columnsOnMap: number,
-        rowsOnMap: number
-      ) {
+    constructor(boardInfo: BoardInfo) {
         // binding methods
         this.addEvents = this.addEvents.bind(this);
+        this.generateImageButtons = this.generateImageButtons.bind(this);
+        this.generateMap = this.generateMap.bind(this);
+        this.updateCurrentMap = this.updateCurrentMap.bind(this);
+        this.createNewMapFromMap = this.createNewMapFromMap.bind(this);
         this.handleKeyDownEvents = this.handleKeyDownEvents.bind(this);
         this.handleKeyUpEvents = this.handleKeyUpEvents.bind(this);
         this.deactiveAllCells = this.deactiveAllCells.bind(this);
@@ -56,8 +49,9 @@ export default class BoardController {
         this.handleMouseMove = this.handleMouseMove.bind(this);
         this.handleMouseUp = this.handleMouseUp.bind(this);
         this.isInsideMap = this.isInsideMap.bind(this);
-        this.updateMap = this.updateMap.bind(this);
-
+        this.undoHistory = this.undoHistory.bind(this);
+        this.redoHistory = this.redoHistory.bind(this);
+    
         this.openContextMenu = this.openContextMenu.bind(this);
         this.undo = this.undo.bind(this);
         this.redo = this.redo.bind(this);
@@ -76,18 +70,15 @@ export default class BoardController {
         this.autoCheckbox = document.getElementById("autoCheckbox") as HTMLInputElement;
         this.contextMenu = document.getElementById("contextMenu") as HTMLDivElement;
 
-        this.cellRepeatWidth = cellRepeatWidth;
-        this.spriteStartingBorderWidth = spriteStartingBorderWidth;
-        this.buttonSize = buttonSize;
-        this.buttonBorderSize = buttonBorderSize;
-        this.rowHeight = buttonSize + 2 * buttonBorderSize;
-        this.columnsOnMap = columnsOnMap;
-        this.rowsOnMap = rowsOnMap;
+        this.info = boardInfo;
 
         // preparing map and events
         this.imageButtons = this.generateImageButtons();
         this.cells = this.generateMap();
-        this.actionHistory = new ActionHistory(this.cells);
+        
+        this.updateHistory(this.cells);
+        // this.actionHistory = new ActionHistory(this.cells, this.info);
+        // this.actionHistory.updateHistory(this.cells);
         this.addEvents();
     }
 
@@ -113,30 +104,30 @@ export default class BoardController {
     generateImageButtons(): ImageButton[][] {
         const buttons: ImageButton[][] = [];
 
-        const border = this.spriteStartingBorderWidth;
-        const iterationWidth = this.cellRepeatWidth + border;
+        const border = this.info.spriteStartingBorderWidth;
+        const iterationWidth = this.info.cellRepeatWidth + border;
 
         // first half of the image
         for (let i = border; i < this.image.height; i += iterationWidth) {
             const row: ImageButton[] = [];
             const div = document.createElement("div");
-            div.style.height = this.rowHeight + "px";
+            div.style.height = this.info.rowHeight + "px";
             this.imageContainer.append(div);
-            for (let j = border; j < this.image.width / 2; j += this.cellRepeatWidth + border) {
+            for (let j = border; j < this.image.width / 2; j += this.info.cellRepeatWidth + border) {
                 const canvas = document.createElement("canvas");
-                canvas.width = canvas.height = this.buttonSize;
+                canvas.width = canvas.height = this.info.buttonSize;
                 const ctx = canvas.getContext("2d");
                 if (ctx != null) {
                     ctx.drawImage(
                         this.image,
                         j,
                         i,
-                        this.cellRepeatWidth,
-                        this.cellRepeatWidth,
+                        this.info.cellRepeatWidth,
+                        this.info.cellRepeatWidth,
                         0,
                         0,
-                        this.buttonSize,
-                        this.buttonSize
+                        this.info.buttonSize,
+                        this.info.buttonSize
                     );
                 }
                 row.push(new ImageButton(canvas, this.handleImageButtonClick));
@@ -148,23 +139,23 @@ export default class BoardController {
         for (let i = border; i < this.image.height; i += iterationWidth) {
             const row: ImageButton[] = [];
             const div = document.createElement("div");
-            div.style.height = this.rowHeight + "px";
+            div.style.height = this.info.rowHeight + "px";
             this.imageContainer.append(div);
             for (let j = border + this.image.width / 2; j < this.image.width; j += iterationWidth) {
                 const canvas = document.createElement("canvas");
-                canvas.width = canvas.height = this.buttonSize;
+                canvas.width = canvas.height = this.info.buttonSize;
                 const ctx = canvas.getContext("2d");
                 if (ctx != null) {
                     ctx.drawImage(
                         this.image,
                         j,
                         i,
-                        this.cellRepeatWidth,
-                        this.cellRepeatWidth,
+                        this.info.cellRepeatWidth,
+                        this.info.cellRepeatWidth,
                         0,
                         0,
-                        this.buttonSize,
-                        this.buttonSize
+                        this.info.buttonSize,
+                        this.info.buttonSize
                     );
                 }
                 row.push(new ImageButton(canvas, this.handleImageButtonClick));
@@ -178,14 +169,14 @@ export default class BoardController {
     generateMap(): CellButton[][] {
         const blocks: CellButton[][] = [];
     
-        for (let x = 0; x < this.rowsOnMap; x++) { // x - row
+        for (let x = 0; x < this.info.rowsOnMap; x++) { // x - row
             const element = document.createElement("div");  
-            element.style.height = this.rowHeight + "px";
+            element.style.height = this.info.rowHeight + "px";
             const row: CellButton[] = [];
-            for (let y = 0; y < this.columnsOnMap; y++) { // y - column
+            for (let y = 0; y < this.info.columnsOnMap; y++) { // y - column
                 const block = new CellButton(
                     element,
-                    this.buttonSize,
+                    this.info.buttonSize,
                     x,
                     y,
                     this.handleCellClickDown,
@@ -198,18 +189,19 @@ export default class BoardController {
         }
         return blocks;
     }
-    updateMap(cells: CellButton[][]): CellButton[][] {
+
+    updateCurrentMap(cells: CellButton[][]): CellButton[][] {
         this.map.innerHTML = "";
         const blocks: CellButton[][] = [];
     
-        for (let x = 0; x < this.rowsOnMap; x++) { // x - row
+        for (let x = 0; x < this.info.rowsOnMap; x++) { // x - row
             const element = document.createElement("div");  
-            element.style.height = this.rowHeight + "px";
+            element.style.height = this.info.rowHeight + "px";
             const row: CellButton[] = [];
-            for (let y = 0; y < this.columnsOnMap; y++) { // y - column
+            for (let y = 0; y < this.info.columnsOnMap; y++) { // y - column
                 const block = new CellButton(
                     element,
-                    this.buttonSize,
+                    this.info.buttonSize,
                     x,
                     y,
                     this.handleCellClickDown,
@@ -223,7 +215,31 @@ export default class BoardController {
         }
         return blocks;
     }
+
+    createNewMapFromMap(cells: CellButton[][]): CellButton[][] {
+        const blocks: CellButton[][] = [];
     
+        for (let x = 0; x < this.info.rowsOnMap; x++) { // x - row
+            const element = document.createElement("div");  
+            element.style.height = this.info.rowHeight + "px";
+            const row: CellButton[] = [];
+            for (let y = 0; y < this.info.columnsOnMap; y++) { // y - column
+                const block = new CellButton(
+                    element,
+                    this.info.buttonSize,
+                    x,
+                    y,
+                    this.handleCellClickDown,
+                    this.handleCellClickUp,
+                    cells[x][y].canvas
+                );
+                row.push(block);
+            }
+            blocks.push(row);
+        }
+        return blocks;
+    }
+
     handleCellClickDown(cell: IMapButton, event: MouseEvent) {  // select first cell of selection
         if (event.button == 2) return;
         if (!this.allowAddingCells) this.deactiveAllCells()
@@ -262,17 +278,17 @@ export default class BoardController {
             cell.draw(canvas);
             cell.active = false;
         });
-        this.actionHistory.updateHistory(this.cells);
+        this.updateHistory(this.cells);
     }
 
     activateNextCell() {
         let x = this.activeCells[this.activeCells.length - 1].x 
         let y = this.activeCells[this.activeCells.length - 1].y + 1
-        if (y >= this.columnsOnMap) {
+        if (y >= this.info.columnsOnMap) {
             x++;
             y = 0;
         }
-        if (x >= this.rowsOnMap) {
+        if (x >= this.info.rowsOnMap) {
             x = 0;
             y = 0;
         }
@@ -297,8 +313,11 @@ export default class BoardController {
         }
     }
     handleKeyUpEvents(event: KeyboardEvent) {
-        if (event.key == "Control") {
-            this.allowAddingCells = false;
+        switch (event.key) {
+            case "Control":
+            case "Meta":
+                this.allowAddingCells = false;
+                break;
         }
     }
 
@@ -359,12 +378,36 @@ export default class BoardController {
         }
     }
 
+    updateHistory(cells: CellButton[][]) {
+        let mapCopy: CellButton[][] = this.createNewMapFromMap(cells);
+        this.cellsHistory.push(mapCopy);
+        this.currentState = (this.cellsHistory.length - 1) > this.currentState ? (this.cellsHistory.length - 1) : this.currentState++;
+        console.log("History state: " + this.currentState);
+    }
+
+    undoHistory(): CellButton[][] {
+        if (this.currentState > 0) {
+            this.currentState--;
+            return this.cellsHistory[this.currentState];
+        }
+        return this.cellsHistory[0];
+    }
+
+    redoHistory(): CellButton[][] {
+        if (this.cellsHistory.length - 1 > this.currentState) {
+            this.currentState++;
+        }
+        return this.cellsHistory[this.currentState];
+    }
+
     // contextMenu options
     undo() {
-        this.cells = this.updateMap(this.actionHistory.undo());
+        let lastMap = this.undoHistory();
+        this.cells = this.updateCurrentMap(lastMap);
     }
     redo() {
-
+        let lastMap = this.redoHistory();
+        this.cells = this.updateCurrentMap(lastMap);
     }
     cut() {
 
