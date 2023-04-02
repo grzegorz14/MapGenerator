@@ -8,6 +8,7 @@ export default class CellButton implements IMapButton {
     y: number;
     clickDownHandler: (button: IMapButton, event: MouseEvent) => void;
     clickUpHandler: (button: IMapButton, event: MouseEvent) => void;
+    mouseOverHandler: (button: IMapButton, event: MouseEvent) => void;
   
     constructor(
       parent: HTMLElement,
@@ -16,6 +17,7 @@ export default class CellButton implements IMapButton {
       y: number, 
       clickDownHandler: (button: IMapButton, event: MouseEvent) => void, 
       clickUpHandler: (button: IMapButton, event: MouseEvent) => void,
+      mouseOverHandler: (button: IMapButton, event: MouseEvent) => void,
       canvas?: HTMLCanvasElement,
       ) {
       this.draw = this.draw.bind(this);
@@ -27,6 +29,7 @@ export default class CellButton implements IMapButton {
       this.y = y;
       this.clickDownHandler = clickDownHandler;
       this.clickUpHandler = clickUpHandler;
+      this.mouseOverHandler = mouseOverHandler;
   
       this.canvas = document.createElement("canvas");
         this.canvas.width = this.canvas.height = width;
@@ -44,6 +47,7 @@ export default class CellButton implements IMapButton {
   
       this.canvas.addEventListener("mousedown", (event) => this.clickDownHandler(this, event));
       this.canvas.addEventListener("mouseup", (event) => this.clickUpHandler(this, event));
+      this.canvas.addEventListener("mouseover", (event) => this.mouseOverHandler(this, event));
     }
 
     draw(imagePart: HTMLCanvasElement) {

@@ -30,6 +30,13 @@ export default class BoardController {
     cellsHistory: CellButton[][][] = [];
     currentState: number = 0;
 
+    isPaste: Boolean = false;
+    isPasteJustTurnedOff: Boolean = false;
+    currentCellX: number = 0;
+    currentCellY: number = 0;
+    copiedCells: Object[][] = [];
+    mapCopy: CellButton[][] = [];
+
     constructor(boardInfo: BoardInfo) {
         // binding methods
         this.addEvents = this.addEvents.bind(this);
@@ -42,6 +49,7 @@ export default class BoardController {
         this.deactiveAllCells = this.deactiveAllCells.bind(this);
         this.handleCellClickDown = this.handleCellClickDown.bind(this);
         this.handleCellClickUp = this.handleCellClickUp.bind(this);
+        this.handleMouseOverCell = this.handleMouseOverCell.bind(this);
         this.handleImageButtonClick = this.handleImageButtonClick.bind(this);
         this.drawOnActiveCells = this.drawOnActiveCells.bind(this);
         this.activateNextCell = this.activateNextCell.bind(this);
@@ -58,6 +66,7 @@ export default class BoardController {
         this.cut = this.cut.bind(this);
         this.copy = this.copy.bind(this);
         this.paste = this.paste.bind(this);
+        this.displayExamplePaste = this.displayExamplePaste.bind(this);
         this.delete = this.delete.bind(this);
         this.saveToFile = this.saveToFile.bind(this);
         this.loadDataFromFile = this.loadDataFromFile.bind(this);
@@ -96,7 +105,7 @@ export default class BoardController {
         document.getElementById("cutOption")?.addEventListener("click", this.cut);
         document.getElementById("copyOption")?.addEventListener("click", this.copy);
         document.getElementById("pasteOption")?.addEventListener("click", this.paste);
-        document.getElementById("deleteOption")?.addEventListener("click", this.deactiveAllCells);
+        document.getElementById("deleteOption")?.addEventListener("click", this.delete);
         document.getElementById("saveFileOption")?.addEventListener("click", this.saveToFile);
         document.getElementById("loadFileOption")?.addEventListener("click", this.loadDataFromFile);
     }
@@ -180,7 +189,8 @@ export default class BoardController {
                     x,
                     y,
                     this.handleCellClickDown,
-                    this.handleCellClickUp
+                    this.handleCellClickUp,
+                    this.handleMouseOverCell
                 );
                 row.push(block);
             }
@@ -206,6 +216,7 @@ export default class BoardController {
                     y,
                     this.handleCellClickDown,
                     this.handleCellClickUp,
+                    this.handleMouseOverCell,
                     cells[x][y].canvas
                 );
                 row.push(block);
@@ -231,6 +242,7 @@ export default class BoardController {
                     y,
                     this.handleCellClickDown,
                     this.handleCellClickUp,
+                    this.handleMouseOverCell,
                     cells[x][y].canvas
                 );
                 row.push(block);
@@ -242,13 +254,20 @@ export default class BoardController {
 
     handleCellClickDown(cell: IMapButton, event: MouseEvent) {  // select first cell of selection
         if (event.button == 2) return;
-        if (!this.allowAddingCells) this.deactiveAllCells()
+        if (this.isPaste) return;
+        if (!this.allowAddingCells) this.deactiveAllCells();
         this.selectedX = cell.x;
         this.selectedY = cell.y;
         cell.canvas.classList.add("startSelection");
     }
     handleCellClickUp(cell: IMapButton, event: MouseEvent) {  // acitivate cells in whole selection
         if (event.button == 2) return;
+        if (this.isPaste) return;
+        if (this.isPasteJustTurnedOff) {
+            this.isPasteJustTurnedOff = false;
+            return;
+        }
+
         let startingX = this.selectedX < cell.x ? this.selectedX : cell.x;
         let startingY = this.selectedY < cell.y ? this.selectedY : cell.y;
         let endingX = this.selectedX >= cell.x ? this.selectedX : cell.x;
@@ -263,6 +282,20 @@ export default class BoardController {
                     cell.canvas.classList.remove("startSelection");
                 }
             }
+        }
+    }
+    handleMouseOverCell(cell: IMapButton, event: MouseEvent) {
+        let change = false;
+        if (this.currentCellX != cell.x) {
+            change = true;
+            this.currentCellX = cell.x;
+        }
+        if (this.currentCellY != cell.y) {
+            change = true;
+            this.currentCellY = cell.y;
+        }
+        if(this.isPaste && change) {
+            this.displayExamplePaste();
         }
     }
     
@@ -309,6 +342,8 @@ export default class BoardController {
                     cell.clearCanvas();
                 });
                 this.deactiveAllCells();
+                this.cells = this.updateCurrentMap(this.cells);
+                this.updateHistory(this.cells);
                 break;
         }
     }
@@ -331,6 +366,14 @@ export default class BoardController {
     handleMouseDown(event: MouseEvent) {
         if (event.button == 2) return;
         if (this.contextMenu.classList.contains("visible")) return;
+
+        if (this.isPaste) {
+            this.isPaste = false;
+            this.isPasteJustTurnedOff = true;
+            this.updateHistory(this.cells);
+            this.deactiveAllCells();
+            return;
+        }
 
         let x = event.clientX;
         let y = event.clientY;
@@ -410,16 +453,99 @@ export default class BoardController {
         this.cells = this.updateCurrentMap(lastMap);
     }
     cut() {
+        if (this.activeCells.length == 0) return;
+        let topLeftX = this.activeCells.reduce((prev, curr) => prev.x < curr.x ? prev : curr).x;
+        let topLeftY = this.activeCells.reduce((prev, curr) => prev.y < curr.y ? prev : curr).y;
+        let bottomRightX = this.activeCells.reduce((prev, curr) => prev.x > curr.x ? prev : curr).x;
+        let bottomRightY = this.activeCells.reduce((prev, curr) => prev.y > curr.y ? prev : curr).y;
 
+        this.copiedCells = [];
+
+        for (let x = topLeftX; x <= bottomRightX; x++) {
+            const row: Object[] = [];
+            for (let y = topLeftY; y <= bottomRightY; y++) {
+                let emptyObject = new Object();
+                row.push(emptyObject);
+            }
+            this.copiedCells.push(row);
+        }
+
+        this.activeCells.forEach(cell => {
+            this.copiedCells[cell.x - topLeftX][cell.y - topLeftY] = new CellButton(
+                document.createElement("div"),
+                this.info.buttonSize,
+                cell.x - topLeftX,
+                cell.y - topLeftY,
+                this.handleCellClickDown,
+                this.handleCellClickUp,
+                this.handleMouseOverCell,
+                cell.canvas
+            )
+        })
+
+        this.delete();
     }
     copy() {
+        if (this.activeCells.length == 0) return;
+        let topLeftX = this.activeCells.reduce((prev, curr) => prev.x < curr.x ? prev : curr).x;
+        let topLeftY = this.activeCells.reduce((prev, curr) => prev.y < curr.y ? prev : curr).y;
+        let bottomRightX = this.activeCells.reduce((prev, curr) => prev.x > curr.x ? prev : curr).x;
+        let bottomRightY = this.activeCells.reduce((prev, curr) => prev.y > curr.y ? prev : curr).y;
 
+        this.copiedCells = [];
+
+        for (let x = topLeftX; x <= bottomRightX; x++) {
+            const row: Object[] = [];
+            for (let y = topLeftY; y <= bottomRightY; y++) {
+                let emptyObject = new Object();
+                row.push(emptyObject);
+            }
+            this.copiedCells.push(row);
+        }
+
+        this.activeCells.forEach(cell => {
+            this.copiedCells[cell.x - topLeftX][cell.y - topLeftY] = new CellButton(
+                document.createElement("div"),
+                this.info.buttonSize,
+                cell.x - topLeftX,
+                cell.y - topLeftY,
+                this.handleCellClickDown,
+                this.handleCellClickUp,
+                this.handleMouseOverCell,
+                cell.canvas
+            )
+        })
+
+        this.deactiveAllCells();
     }
     paste() {
-
+        this.mapCopy = this.createNewMapFromMap(this.cellsHistory[this.currentState]);
+        this.isPaste = true;
     }
-    delete() {
 
+    displayExamplePaste() {
+        this.cells = this.updateCurrentMap(this.mapCopy);
+
+        this.copiedCells.forEach(row => {
+            row.forEach(element => {
+                if (element instanceof CellButton) {
+                    if (this.currentCellX + element.x < this.info.columnsOnMap && this.currentCellY + element.y < this.info.rowsOnMap) {
+                        this.cells[this.currentCellX + element.x][this.currentCellY + element.y] = element;
+                    }
+                }
+            });
+        });
+
+        this.cells = this.updateCurrentMap(this.cells);
+    }
+
+    delete() {
+        this.activeCells.forEach(cell => {
+            cell.clearCanvas();
+        });
+        this.deactiveAllCells();
+        this.cells = this.updateCurrentMap(this.cells);
+        this.updateHistory(this.cells);
     }
     saveToFile() {
 
