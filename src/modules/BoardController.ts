@@ -68,8 +68,6 @@ export default class BoardController {
         this.paste = this.paste.bind(this);
         this.displayExamplePaste = this.displayExamplePaste.bind(this);
         this.delete = this.delete.bind(this);
-        this.saveToFile = this.saveToFile.bind(this);
-        this.loadDataFromFile = this.loadDataFromFile.bind(this);
 
         // assigning values from config.ts
         this.image = document.getElementById("image") as HTMLImageElement;
@@ -106,8 +104,6 @@ export default class BoardController {
         document.getElementById("copyOption")?.addEventListener("click", this.copy);
         document.getElementById("pasteOption")?.addEventListener("click", this.paste);
         document.getElementById("deleteOption")?.addEventListener("click", this.delete);
-        document.getElementById("saveFileOption")?.addEventListener("click", this.saveToFile);
-        document.getElementById("loadFileOption")?.addEventListener("click", this.loadDataFromFile);
     }
 
     generateImageButtons(): ImageButton[][] {
@@ -332,27 +328,42 @@ export default class BoardController {
     }
 
     handleKeyDownEvents(event: KeyboardEvent) {
-        switch (event.key) {
-            case "Control":
-            case "Meta":
-                this.allowAddingCells = true;
-                break;
-            case "Delete":
-                this.activeCells.forEach(cell => {
-                    cell.clearCanvas();
-                });
-                this.deactiveAllCells();
-                this.cells = this.updateCurrentMap(this.cells);
-                this.updateHistory(this.cells);
-                break;
+        let ctrlKey = event.ctrlKey || event.metaKey;
+
+        if (ctrlKey) {
+            switch (event.key) {
+                case "z":
+                    this.undo();
+                    break;
+                case "y":
+                    this.redo();
+                    break;
+                case "x":
+                    this.cut();
+                    break;
+                case "c":
+                    this.copy();
+                    break;
+                case "v":
+                    this.paste();
+                    break;
+                default:
+                    this.allowAddingCells = true;
+                    break;
+            }
+        }
+        else if (event.key == "Delete") {
+            this.activeCells.forEach(cell => {
+                cell.clearCanvas();
+            });
+            this.deactiveAllCells();
+            this.cells = this.updateCurrentMap(this.cells);
+            this.updateHistory(this.cells);
         }
     }
     handleKeyUpEvents(event: KeyboardEvent) {
-        switch (event.key) {
-            case "Control":
-            case "Meta":
-                this.allowAddingCells = false;
-                break;
+        if (event.ctrlKey || event.metaKey) {
+            this.allowAddingCells = false;
         }
     }
 
@@ -547,11 +558,4 @@ export default class BoardController {
         this.cells = this.updateCurrentMap(this.cells);
         this.updateHistory(this.cells);
     }
-    saveToFile() {
-
-    }
-    loadDataFromFile() {
-
-    }
-
 }

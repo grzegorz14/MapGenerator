@@ -3,6 +3,6 @@ export const config = {
   spriteStartingBorderWidth: 1,
   buttonSize: 30,
   buttonBorderSize: 2,
-  columnsOnMap: 15,
-  rowsOnMap: 15,
+  columnsOnMap: 16,
+  rowsOnMap: 18,
 }
