@@ -1,11 +1,12 @@
+// class that stores information from config file
 export default class BoardInfo {
-    cellRepeatWidth: number;
-    spriteStartingBorderWidth: number;
-    buttonSize: number;
-    buttonBorderSize: number;
-    rowHeight: number;
-    columnsOnMap: number;
-    rowsOnMap: number;
+    public cellRepeatWidth: number;
+    public spriteStartingBorderWidth: number;
+    public buttonSize: number;
+    public buttonBorderSize: number;
+    public rowHeight: number;
+    public columnsOnMap: number;
+    public rowsOnMap: number;
 
     constructor(
         cellRepeatWidth: number,

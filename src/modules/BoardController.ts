@@ -1,41 +1,41 @@
-// import ActionHistory from "./ActionHistory";
 import CellButton from "./CellButton";
 import ImageButton from "./ImageButton";
+import SelectionDivController from "./SelectionDivController";
 import type IButton from "./interfaces/IButton";
 import type IMapButton from "./interfaces/IMapButton";
-import SelectionDivController from "./SelectionDivController";
 import type BoardInfo from "./BoardInfo";
 
+// class used for running whole application
 export default class BoardController {
-    image: HTMLImageElement;
-    imageContainer: HTMLDivElement;
-    map: HTMLDivElement;
-    selectionDiv: HTMLDivElement;
-    selectionDivController?: SelectionDivController;
-    autoCheckbox: HTMLInputElement;
-    contextMenu: HTMLDivElement;
+    readonly image: HTMLImageElement;
+    readonly imageContainer: HTMLDivElement;
+    readonly map: HTMLDivElement;
+    readonly autoCheckbox: HTMLInputElement;
+    readonly contextMenu: HTMLDivElement;
+    readonly selectionDiv: HTMLDivElement;
+    private selectionDivController?: SelectionDivController;
 
-    info: BoardInfo;
+    readonly info: BoardInfo;
 
-    readonly imageButtons: ImageButton[][];
-    cells: CellButton[][];
+    private imageButtons: ImageButton[][];
+    public cells: CellButton[][];
     
-    selectionActive: Boolean = false;
-    selectedX: number = -1;
-    selectedY: number = -1;
+    private selectionActive: Boolean = false;
+    private selectedX: number = -1;
+    private selectedY: number = -1;
 
     private allowAddingCells: Boolean = false;
-    activeCells: CellButton[] = [];
+    private activeCells: CellButton[] = [];
 
-    cellsHistory: CellButton[][][] = [];
-    currentState: number = 0;
+    public cellsHistory: CellButton[][][] = [];
+    public currentState: number = 0;
 
-    isPaste: Boolean = false;
-    isPasteJustTurnedOff: Boolean = false;
-    currentCellX: number = 0;
-    currentCellY: number = 0;
-    copiedCells: Object[][] = [];
-    mapCopy: CellButton[][] = [];
+    private isPaste: Boolean = false;
+    private isPasteJustTurnedOff: Boolean = false;
+    private currentCellX: number = 0;
+    private currentCellY: number = 0;
+    private copiedCells: Object[][] = [];
+    private mapCopy: CellButton[][] = [];
 
     constructor(boardInfo: BoardInfo) {
         // binding methods
@@ -51,7 +51,6 @@ export default class BoardController {
         this.handleCellClickUp = this.handleCellClickUp.bind(this);
         this.handleMouseOverCell = this.handleMouseOverCell.bind(this);
         this.handleImageButtonClick = this.handleImageButtonClick.bind(this);
-        this.drawOnActiveCells = this.drawOnActiveCells.bind(this);
         this.activateNextCell = this.activateNextCell.bind(this);
         this.handleMouseDown = this.handleMouseDown.bind(this);
         this.handleMouseMove = this.handleMouseMove.bind(this);
@@ -69,7 +68,7 @@ export default class BoardController {
         this.displayExamplePaste = this.displayExamplePaste.bind(this);
         this.delete = this.delete.bind(this);
 
-        // assigning values from config.ts
+        // binding html elements by id's
         this.image = document.getElementById("image") as HTMLImageElement;
         this.imageContainer = document.getElementById("imageContainer") as HTMLDivElement;
         this.map = document.getElementById("map") as HTMLDivElement;
@@ -77,6 +76,7 @@ export default class BoardController {
         this.autoCheckbox = document.getElementById("autoCheckbox") as HTMLInputElement;
         this.contextMenu = document.getElementById("contextMenu") as HTMLDivElement;
 
+        // assigning values from config.ts
         this.info = boardInfo;
 
         // preparing map and events
@@ -84,12 +84,11 @@ export default class BoardController {
         this.cells = this.generateMap();
         
         this.updateHistory(this.cells);
-        // this.actionHistory = new ActionHistory(this.cells, this.info);
-        // this.actionHistory.updateHistory(this.cells);
         this.addEvents();
     }
 
-    addEvents() {
+    // adds necessary event listeners 
+    private addEvents() {
         const body = document.querySelector("body");
         body?.addEventListener("keydown", this.handleKeyDownEvents);
         body?.addEventListener("keyup", this.handleKeyUpEvents);
@@ -106,7 +105,8 @@ export default class BoardController {
         document.getElementById("deleteOption")?.addEventListener("click", this.delete);
     }
 
-    generateImageButtons(): ImageButton[][] {
+    // generates button map named "ITEMS" from image
+    private generateImageButtons(): ImageButton[][] {
         const buttons: ImageButton[][] = [];
 
         const border = this.info.spriteStartingBorderWidth;
@@ -171,7 +171,8 @@ export default class BoardController {
         return buttons;
     }
     
-    generateMap(): CellButton[][] {
+    // generates empty map
+    private generateMap(): CellButton[][] {
         const blocks: CellButton[][] = [];
     
         for (let x = 0; x < this.info.rowsOnMap; x++) { // x - row
@@ -196,7 +197,8 @@ export default class BoardController {
         return blocks;
     }
 
-    updateCurrentMap(cells: CellButton[][]): CellButton[][] {
+    // draws on map
+    public updateCurrentMap(cells: CellButton[][]): CellButton[][] {
         this.map.innerHTML = "";
         const blocks: CellButton[][] = [];
     
@@ -223,7 +225,8 @@ export default class BoardController {
         return blocks;
     }
 
-    createNewMapFromMap(cells: CellButton[][]): CellButton[][] {
+    // get a copy of map but with new elements
+    public createNewMapFromMap(cells: CellButton[][]): CellButton[][] {
         const blocks: CellButton[][] = [];
     
         for (let x = 0; x < this.info.rowsOnMap; x++) { // x - row
@@ -248,7 +251,8 @@ export default class BoardController {
         return blocks;
     }
 
-    handleCellClickDown(cell: IMapButton, event: MouseEvent) {  // select first cell of selection
+    // select first cell of selection
+    private handleCellClickDown(cell: IMapButton, event: MouseEvent) {  
         if (event.button == 2) return;
         if (this.isPaste) return;
         if (!this.allowAddingCells) this.deactiveAllCells();
@@ -256,7 +260,8 @@ export default class BoardController {
         this.selectedY = cell.y;
         cell.canvas.classList.add("startSelection");
     }
-    handleCellClickUp(cell: IMapButton, event: MouseEvent) {  // acitivate cells in whole selection
+    // acitivate cells in whole selection
+    private handleCellClickUp(cell: IMapButton, event: MouseEvent) {  
         if (event.button == 2) return;
         if (this.isPaste) return;
         if (this.isPasteJustTurnedOff) {
@@ -280,7 +285,8 @@ export default class BoardController {
             }
         }
     }
-    handleMouseOverCell(cell: IMapButton, event: MouseEvent) {
+    // used for drawing example paste while pasting
+    private handleMouseOverCell(cell: IMapButton, event: MouseEvent) {
         let change = false;
         if (this.currentCellX != cell.x) {
             change = true;
@@ -295,22 +301,19 @@ export default class BoardController {
         }
     }
     
-    // draw clicked image on selected cells
-    handleImageButtonClick(button: IButton) {
-        this.drawOnActiveCells(button.canvas);
-        if (this.activeCells.length > 0 && this.autoCheckbox.checked) this.activateNextCell()
-        else this.activeCells.length = 0;
-    }  
-
-    drawOnActiveCells(canvas: HTMLCanvasElement) {
+    // draws clicked image on selected cells
+    private handleImageButtonClick(button: IButton) {
         this.activeCells.forEach(cell => {
-            cell.draw(canvas);
+            cell.draw(button.canvas);
             cell.active = false;
         });
         this.updateHistory(this.cells);
-    }
+        if (this.activeCells.length > 0 && this.autoCheckbox.checked) this.activateNextCell()
+        else this.activeCells.length = 0;
+    } 
 
-    activateNextCell() {
+    // activates next cell after drawing
+    private activateNextCell() {
         let x = this.activeCells[this.activeCells.length - 1].x 
         let y = this.activeCells[this.activeCells.length - 1].y + 1
         if (y >= this.info.columnsOnMap) {
@@ -327,7 +330,8 @@ export default class BoardController {
         this.activeCells.push(this.cells[x][y]);
     }
 
-    handleKeyDownEvents(event: KeyboardEvent) {
+    // handles ctrl selection and shortcuts
+    private handleKeyDownEvents(event: KeyboardEvent) {
         let ctrlKey = event.ctrlKey || event.metaKey;
 
         if (ctrlKey) {
@@ -361,20 +365,22 @@ export default class BoardController {
             this.updateHistory(this.cells);
         }
     }
-    handleKeyUpEvents(event: KeyboardEvent) {
+    // stops ctrl selection
+    private handleKeyUpEvents(event: KeyboardEvent) {
         if (event.ctrlKey || event.metaKey) {
             this.allowAddingCells = false;
         }
     }
 
-    deactiveAllCells() {
+    // clears cells selection
+    private deactiveAllCells() {
         this.activeCells.forEach(cell => {
             cell.active = false;
         });
         this.activeCells.length = 0;
     }
 
-    handleMouseDown(event: MouseEvent) {
+    private handleMouseDown(event: MouseEvent) {
         if (event.button == 2) return;
         if (this.contextMenu.classList.contains("visible")) return;
 
@@ -399,14 +405,14 @@ export default class BoardController {
             this.selectionActive = true;
         }
     }
-    handleMouseMove(event: MouseEvent) {
+    private handleMouseMove(event: MouseEvent) {
         if (!this.selectionActive) return;
         if (this.contextMenu.classList.contains("visible")) return;
         if (this.isInsideMap(event)) {
             this.selectionDivController?.move(event.clientX, event.clientY);
         }
     }
-    handleMouseUp(event: MouseEvent) {
+    private handleMouseUp(event: MouseEvent) {
         if (event.button == 2) return;
         if (this.contextMenu.classList.contains("visible")) {
             if (event.target != this.contextMenu) {
@@ -418,12 +424,13 @@ export default class BoardController {
         this.selectionActive = false;
     }
 
-    private isInsideMap(event: MouseEvent) { // check if click is inside map
+    // checks if click is inside map
+    private isInsideMap(event: MouseEvent) { 
         let rect = this.map.getBoundingClientRect();
         return event.clientX > rect.left && event.clientX < rect.right && event.clientY > rect.top && event.clientY < rect.bottom;
     }
 
-    openContextMenu(event: MouseEvent) {
+    private openContextMenu(event: MouseEvent) {
         event.preventDefault();
         if (this.isInsideMap(event)) {
             this.contextMenu.style.left = event.clientX + "px";
@@ -432,14 +439,16 @@ export default class BoardController {
         }
     }
 
-    updateHistory(cells: CellButton[][]) {
+    // saves current map to history
+    public updateHistory(cells: CellButton[][]) {
         let mapCopy: CellButton[][] = this.createNewMapFromMap(cells);
         this.cellsHistory.push(mapCopy);
         this.currentState = (this.cellsHistory.length - 1) > this.currentState ? (this.cellsHistory.length - 1) : this.currentState++;
         console.log("History state: " + this.currentState);
     }
 
-    undoHistory(): CellButton[][] {
+    // returns last history state
+    private undoHistory(): CellButton[][] {
         if (this.currentState > 0) {
             this.currentState--;
             return this.cellsHistory[this.currentState];
@@ -447,7 +456,8 @@ export default class BoardController {
         return this.cellsHistory[0];
     }
 
-    redoHistory(): CellButton[][] {
+    // returns future history state if undoHistory was called at least once
+    private redoHistory(): CellButton[][] {
         if (this.cellsHistory.length - 1 > this.currentState) {
             this.currentState++;
         }
@@ -455,15 +465,16 @@ export default class BoardController {
     }
 
     // contextMenu options
-    undo() {
+
+    public undo() {
         let lastMap = this.undoHistory();
         this.cells = this.updateCurrentMap(lastMap);
     }
-    redo() {
+    public redo() {
         let lastMap = this.redoHistory();
         this.cells = this.updateCurrentMap(lastMap);
     }
-    cut() {
+    private cut() {
         if (this.activeCells.length == 0) return;
         let topLeftX = this.activeCells.reduce((prev, curr) => prev.x < curr.x ? prev : curr).x;
         let topLeftY = this.activeCells.reduce((prev, curr) => prev.y < curr.y ? prev : curr).y;
@@ -496,7 +507,7 @@ export default class BoardController {
 
         this.delete();
     }
-    copy() {
+    private copy() {
         if (this.activeCells.length == 0) return;
         let topLeftX = this.activeCells.reduce((prev, curr) => prev.x < curr.x ? prev : curr).x;
         let topLeftY = this.activeCells.reduce((prev, curr) => prev.y < curr.y ? prev : curr).y;
@@ -529,12 +540,21 @@ export default class BoardController {
 
         this.deactiveAllCells();
     }
-    paste() {
+    private paste() {
         this.mapCopy = this.createNewMapFromMap(this.cellsHistory[this.currentState]);
         this.isPaste = true;
     }
+    private delete() {
+        this.activeCells.forEach(cell => {
+            cell.clearCanvas();
+        });
+        this.deactiveAllCells();
+        this.cells = this.updateCurrentMap(this.cells);
+        this.updateHistory(this.cells);
+    }
 
-    displayExamplePaste() {
+    // draws example paste on map without saving it
+    private displayExamplePaste() {
         this.cells = this.updateCurrentMap(this.mapCopy);
 
         this.copiedCells.forEach(row => {
@@ -548,14 +568,5 @@ export default class BoardController {
         });
 
         this.cells = this.updateCurrentMap(this.cells);
-    }
-
-    delete() {
-        this.activeCells.forEach(cell => {
-            cell.clearCanvas();
-        });
-        this.deactiveAllCells();
-        this.cells = this.updateCurrentMap(this.cells);
-        this.updateHistory(this.cells);
     }
 }

@@ -1,6 +1,7 @@
 import type IButton from "./interfaces/IButton";
 import type IClickHandler from "./interfaces/IClickHandler";
 
+// class representing single image button used to draw image on map
 export default class ImageButton implements IButton {
     readonly canvas: HTMLCanvasElement;
     clickHandler: IClickHandler;

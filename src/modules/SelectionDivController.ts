@@ -1,9 +1,10 @@
+// class used for drawing rectangle while selecting cells
 export default class SelectionDivController {
-    div: HTMLDivElement;
-    initialX: number;
-    initialY: number;
-    currentX: number;
-    currentY: number;
+    readonly div: HTMLDivElement;
+    readonly initialX: number;
+    readonly initialY: number;
+    private currentX: number;
+    private currentY: number;
 
     constructor(div: HTMLDivElement, x: number, y: number) {
         this.show = this.show.bind(this);

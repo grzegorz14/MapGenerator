@@ -1,11 +1,12 @@
 import type IMapButton from "./interfaces/IMapButton";
 
+// class representing single map cell
 export default class CellButton implements IMapButton {
-    canvas: HTMLCanvasElement;
-    width: number;
+    readonly canvas: HTMLCanvasElement;
+    readonly width: number;
     private _active: boolean;
-    x: number;
-    y: number;
+    public x: number;
+    public y: number;
     clickDownHandler: (button: IMapButton, event: MouseEvent) => void;
     clickUpHandler: (button: IMapButton, event: MouseEvent) => void;
     mouseOverHandler: (button: IMapButton, event: MouseEvent) => void;
