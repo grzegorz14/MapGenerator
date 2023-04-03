@@ -26,5 +26,9 @@
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
     "useDefineForClassFields": true
+  },
+  "typedocOptions": {
+    "entryPoints": ["src/index.ts"],
+    "out": "docs"
   }
 }
