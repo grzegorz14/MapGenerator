@@ -1,4 +1,4 @@
-// class used for drawing rectangle while selecting cells
+/** class used for drawing rectangle while selecting cells */
 export default class SelectionDivController {
     readonly div: HTMLDivElement;
     readonly initialX: number;

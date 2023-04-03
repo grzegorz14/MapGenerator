@@ -1,4 +1,4 @@
-// class that stores information from config file
+/** class that stores information from config file */
 export default class BoardInfo {
     public cellRepeatWidth: number;
     public spriteStartingBorderWidth: number;

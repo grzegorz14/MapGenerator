@@ -1,6 +1,6 @@
 import type IMapButton from "./interfaces/IMapButton";
 
-// class representing single map cell
+/** class representing single map cell */
 export default class CellButton implements IMapButton {
     readonly canvas: HTMLCanvasElement;
     readonly width: number;
