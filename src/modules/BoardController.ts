@@ -5,7 +5,9 @@ import type IButton from "./interfaces/IButton";
 import type IMapButton from "./interfaces/IMapButton";
 import type BoardInfo from "./BoardInfo";
 
-/** class used for running whole application */
+/** 
+ * main class 
+ */
 export default class BoardController {
     readonly image: HTMLImageElement;
     readonly imageContainer: HTMLDivElement;
@@ -88,6 +90,7 @@ export default class BoardController {
     }
 
     /** adds necessary event listeners */
+    
     private addEvents() {
         const body = document.querySelector("body");
         body?.addEventListener("keydown", this.handleKeyDownEvents);
@@ -197,7 +200,11 @@ export default class BoardController {
         return blocks;
     }
 
-    /** draws on map */
+    /**
+     * Starts the application with given options
+     * @param cells options to start the application with
+     * @returns a promise resolved true when the application is ready
+     */
     public updateCurrentMap(cells: CellButton[][]): CellButton[][] {
         this.map.innerHTML = "";
         const blocks: CellButton[][] = [];
