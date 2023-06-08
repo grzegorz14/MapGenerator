@@ -1,24 +1,29 @@
-# New Project
+# Map Generator Typescript
 
-> ✨ Bootstrapped with Create Snowpack App (CSA).
+School project in which I had to reconstruct a page for generating pacman map from given image.
+I was given nothing more than requirements and the image so my job was to learn TS by myself. 
 
-## Available Scripts
+## Run locally
 
-### npm start
+```
+  node install
+  npm start
+```
 
-Runs the app in the development mode.
-Open http://localhost:8080 to view it in the browser.
+Open link created by the terminal. 
 
-The page will reload if you make edits.
-You will also see any lint errors in the console.
+## Screenshots
 
-### npm run build
+![image](https://github.com/grzegorz14/MapGenerator/assets/92259597/120c73b5-ae53-4c15-8a2b-6d312b24e371)
 
-Builds a static copy of your site to the `build/` folder.
-Your app is ready to be deployed!
+Selecting a few spaces while holding ctrl:
+![image](https://github.com/grzegorz14/MapGenerator/assets/92259597/16529cb2-2aac-4f50-8817-e85f3ad1aa71)
 
-**For the best production performance:** Add a build bundler plugin like [@snowpack/plugin-webpack](https://github.com/snowpackjs/snowpack/tree/main/plugins/plugin-webpack) or [snowpack-plugin-rollup-bundle](https://github.com/ParamagicDev/snowpack-plugin-rollup-bundle) to your `snowpack.config.mjs` config file.
+Filling each selected space with chosen element from image:
+![image](https://github.com/grzegorz14/MapGenerator/assets/92259597/0566133a-2b7a-4f8b-a38e-ea6c81bc7df3)
 
-### Q: What about Eject?
+Possible operations after right click:
+- undo / redo (map history is tracked)
+- cut / copy / paste / delete selected cells 
+![image](https://github.com/grzegorz14/MapGenerator/assets/92259597/0e16b54b-a428-47ae-8f2a-fc707704dad7)
 
-No eject needed! Snowpack guarantees zero lock-in, and CSA strives for the same.
