@@ -27,5 +27,6 @@ Filling each selected space with chosen element from image:
 Possible operations after right click:
 - undo / redo (map history is tracked)
 - cut / copy / paste / delete selected cells 
+ 
 ![image](https://github.com/grzegorz14/MapGenerator/assets/92259597/0e16b54b-a428-47ae-8f2a-fc707704dad7)
 
