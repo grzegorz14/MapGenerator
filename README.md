@@ -6,7 +6,7 @@ I was given nothing more than requirements and the image so my job was to learn 
 ## Run locally
 
 ```
-  node install
+  npm install
   npm start
 ```
 
